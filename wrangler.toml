@@ -1,0 +1,30 @@
+name = "echo-reviews"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[vars]
+ENVIRONMENT = "production"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "echo-reviews"
+database_id = "da1ddba2-8b39-4b9f-b71b-ac3342ba6cb8"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "b2e4bcb5368746f68472ae52bce4a84b"
+
+[triggers]
+crons = ["0 5 * * *"]
+
+[[services]]
+binding = "ENGINE_RUNTIME"
+service = "echo-engine-runtime"
+
+[[services]]
+binding = "SHARED_BRAIN"
+service = "echo-shared-brain"
+
+[[services]]
+binding = "EMAIL_SENDER"
+service = "echo-email-sender"
