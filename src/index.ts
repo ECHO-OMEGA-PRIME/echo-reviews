@@ -43,14 +43,13 @@ function json(data: unknown, status = 200): Response {
 }
 
 function err(message: string, status = 400): Response {
-  return json({ error: message }
+  return json({ error: message }, status);
+}
 
 function slog(level: 'info' | 'warn' | 'error', msg: string, data?: Record<string, unknown>) {
   const entry = { ts: new Date().toISOString(), level, worker: 'echo-reviews', version: '1.0.0', msg, ...data };
   if (level === 'error') console.error(JSON.stringify(entry));
   else console.log(JSON.stringify(entry));
-}
-, status);
 }
 
 function authOk(req: Request, env: Env): boolean {
