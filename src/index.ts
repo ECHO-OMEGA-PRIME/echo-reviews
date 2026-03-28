@@ -77,7 +77,7 @@ function tenantId(req: Request, url: URL): string {
 }
 
 export default {
-  async fetch(req: Request, env: Env): Promise<Response> {
+  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     if (req.method === 'OPTIONS') return cors(new Response(null, { status: 204 }));
     const url = new URL(req.url);
     const p = url.pathname;
@@ -108,9 +108,9 @@ export default {
           await env.DB.prepare('UPDATE locations SET total_reviews = total_reviews + 1, avg_rating = (SELECT AVG(rating) FROM reviews WHERE location_id = ? AND status = ?) WHERE id = ?')
             .bind(rr.location_id, 'approved', rr.location_id).run();
         }
-        // AI sentiment analysis (fire-and-forget)
+        // AI sentiment analysis (ctx.waitUntil to ensure completion)
         if (reviewBody) {
-          (async () => {
+          ctx.waitUntil((async () => {
             try {
               const sr = await env.ENGINE_RUNTIME.fetch('https://engine/query', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -123,7 +123,7 @@ export default {
               const score = scoreMatch ? parseFloat(scoreMatch[0]) : (sentiment === 'positive' ? 0.8 : sentiment === 'negative' ? -0.8 : 0);
               await env.DB.prepare('UPDATE reviews SET sentiment = ?, sentiment_score = ? WHERE id = ?').bind(sentiment, score, reviewId).run();
             } catch {}
-          })();
+          })());
         }
         return json({ success: true, review_id: reviewId });
       }
@@ -332,10 +332,10 @@ var s=d.currentScript||d.querySelector('script[src*="widget.js"]');if(s&&s.paren
         await env.DB.prepare(
           'INSERT INTO review_requests (id, tenant_id, campaign_id, customer_name, customer_email, location_id, token, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         ).bind(id, tid, b.campaign_id || null, sanitize(b.customer_name, 100), sanitize(b.customer_email, 200), b.location_id || null, tkn, expiresAt).run();
-        // Send email (fire-and-forget)
+        // Send email (ctx.waitUntil to ensure delivery + status update)
         const tenant = await env.DB.prepare('SELECT * FROM tenants WHERE id = ?').bind(tid).first();
         const reviewUrl = `${url.origin}/r/${tkn}`;
-        (async () => {
+        ctx.waitUntil((async () => {
           try {
             await env.EMAIL_SENDER.fetch('https://email/send', {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -347,7 +347,7 @@ var s=d.currentScript||d.querySelector('script[src*="widget.js"]');if(s&&s.paren
             });
             await env.DB.prepare('UPDATE review_requests SET status = ?, sent_at = datetime(?) WHERE id = ?').bind('sent', 'now', id).run();
           } catch {}
-        })();
+        })());
         return json({ id, token: tkn, review_url: reviewUrl }, 201);
       }
       if (p === '/requests' && m === 'GET') {
