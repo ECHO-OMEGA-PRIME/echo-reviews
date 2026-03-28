@@ -79,7 +79,7 @@ export default {
 
     try {
       // ── Public endpoints ──
-      if (p === '/health') return json({ status: 'ok', service: 'echo-reviews', version: '1.0.0', timestamp: new Date().toISOString() });
+      if (p === '/health' || p === '/') return json({ status: 'ok', service: 'echo-reviews', version: '1.0.0', timestamp: new Date().toISOString() });
 
       // Public: submit a review via request token
       if (p === '/submit' && m === 'POST') {
