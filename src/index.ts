@@ -43,7 +43,14 @@ function json(data: unknown, status = 200): Response {
 }
 
 function err(message: string, status = 400): Response {
-  return json({ error: message }, status);
+  return json({ error: message }
+
+function slog(level: 'info' | 'warn' | 'error', msg: string, data?: Record<string, unknown>) {
+  const entry = { ts: new Date().toISOString(), level, worker: 'echo-reviews', version: '1.0.0', msg, ...data };
+  if (level === 'error') console.error(JSON.stringify(entry));
+  else console.log(JSON.stringify(entry));
+}
+, status);
 }
 
 function authOk(req: Request, env: Env): boolean {
@@ -538,7 +545,7 @@ var s=d.currentScript||d.querySelector('script[src*="widget.js"]');if(s&&s.paren
       if (e.message?.includes('JSON')) {
         return err('Invalid JSON body', 400);
       }
-      console.error(`[echo-reviews] ${e.message}`);
+      slog('error', 'Unhandled request error', { error: e.message, stack: e.stack });
       return err('Internal server error', 500);
     }
   },
