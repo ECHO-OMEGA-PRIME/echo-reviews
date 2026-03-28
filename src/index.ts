@@ -535,7 +535,11 @@ var s=d.currentScript||d.querySelector('script[src*="widget.js"]');if(s&&s.paren
 
       return err('Not found', 404);
     } catch (e: any) {
-      return err(e.message || 'Internal error', 500);
+      if (e.message?.includes('JSON')) {
+        return err('Invalid JSON body', 400);
+      }
+      console.error(`[echo-reviews] ${e.message}`);
+      return err('Internal server error', 500);
     }
   },
 
